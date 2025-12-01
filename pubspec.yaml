@@ -1,0 +1,4 @@
+name: adventOfCode_2025_dart
+
+environment:
+  sdk: ^3.10.0
