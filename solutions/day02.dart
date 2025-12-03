@@ -49,14 +49,15 @@ void partTwo(List<Range> ranges) {
 
     for (var n = startInt; n <= endInt; n++) {
       final testStr = n.toString();
-      print('testNum: $testStr');
 
       final nPatterns = testStr.length ~/ 2;
       for (int i = 0; i < nPatterns; ++i) {
+        // Create repeating pattern
         var pattern = testStr.substring(0, i + 1);
         pattern = pattern * (testStr.length ~/ pattern.length);
+
+        // Check for match
         if (testStr == pattern) {
-          print(n);
           solution += n;
           break;
         }
