@@ -1,13 +1,3 @@
-// 1) Loop through and find the index of the largest number,
-// exclude the final digit. (fold?)
-
-// 2) Starting from that index, loop through again to find the
-// largest number for the second digit of the solution for that row.
-
-// 3) Sum each row solution for final solution.
-
-// TODO: FLASHCARDS: indexed()
-
 import 'dart:io';
 
 const nBatteries = 12;
@@ -25,10 +15,14 @@ void partOne(List<String> batteryBanks) {
   for (final bank in batteryBanks) {
     final chars = bank.split('');
 
-    final largest = chars.take(bank.length - 1).indexed.reduce(largestChar);
-    final second = chars.sublist(largest.$1 + 1).indexed.reduce(largestChar);
+    final (idx1, val1) = chars
+        .take(bank.length - 1)
+        .indexed
+        .reduce(largestChar);
 
-    final joltage = int.parse('${largest.$2}${second.$2}');
+    final (_, val2) = chars.skip(idx1 + 1).indexed.reduce(largestChar);
+
+    final joltage = int.parse('$val1$val2');
     solution += joltage;
   }
 
@@ -45,13 +39,13 @@ void partTwo(List<String> batteryBanks) {
     var startIdx = 0;
 
     for (var i = 0; i < nBatteries; ++i) {
-      final largest = chars
+      final (idx, val) = chars
           .sublist(startIdx, bank.length - (11 - i))
           .indexed
           .reduce(largestChar);
 
-      startIdx += largest.$1 + 1;
-      bankChars += largest.$2;
+      startIdx += idx + 1;
+      bankChars += val;
     }
 
     final joltage = int.parse(bankChars);
