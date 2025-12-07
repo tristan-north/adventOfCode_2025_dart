@@ -1,12 +1,12 @@
 import 'dart:io';
 
-typedef coord = ({int row, int col});
+typedef Coord = ({int row, int col});
 
 void main() {
-  final input = File('input/day04_input.txt').readAsLinesSync();
-
-  // Create a 2d array List<List<String>>
-  final input2d = [for (final line in input) line.split('')];
+  // Create 2D Array List<List<String>>
+  final input2d = File(
+    'input/day04_input.txt',
+  ).readAsLinesSync().map((line) => line.split('')).toList();
 
   var solutionPartOne = 0;
   var solutionPartTwo = 0;
@@ -27,7 +27,7 @@ int removeRolls(List<List<String>> grid) {
   final gridOut = [
     for (final row in grid) [...row],
   ];
-  final rowLen = grid.first.first.length;
+  final rowLen = grid.first.length;
   var nRollsRemoved = 0;
 
   for (final (rowIdx, row) in grid.indexed) {
@@ -39,15 +39,9 @@ int removeRolls(List<List<String>> grid) {
         col: colIdx,
       ), rowLen);
 
-      final numAdjacent = adjacentIndices.fold(0, (count, testIdx) {
-        if (testIdx.row >= 0 &&
-            testIdx.col >= 0 &&
-            grid.elementAtOrNull(testIdx.row)?.elementAtOrNull(testIdx.col) ==
-                '@')
-          return ++count;
-        else
-          return count;
-      });
+      final numAdjacent = adjacentIndices
+          .where((coord) => grid[coord.row][coord.col] == '@')
+          .length;
 
       if (numAdjacent < 4) {
         gridOut[rowIdx][colIdx] = 'x';
@@ -61,26 +55,32 @@ int removeRolls(List<List<String>> grid) {
   return nRollsRemoved;
 }
 
-List<coord> getAdjacentIndices2d(coord idx, int rowLen) {
+List<Coord> getAdjacentIndices2d(Coord idx, int rowLen) {
   return [
-    (col: idx.col - 1, row: idx.row - 1),
-    (col: idx.col - 0, row: idx.row - 1),
-    (col: idx.col + 1, row: idx.row - 1),
+        (col: idx.col - 1, row: idx.row - 1),
+        (col: idx.col - 0, row: idx.row - 1),
+        (col: idx.col + 1, row: idx.row - 1),
 
-    (col: idx.col - 1, row: idx.row - 0),
-    (col: idx.col + 1, row: idx.row - 0),
+        (col: idx.col - 1, row: idx.row - 0),
+        (col: idx.col + 1, row: idx.row - 0),
 
-    (col: idx.col - 1, row: idx.row + 1),
-    (col: idx.col - 0, row: idx.row + 1),
-    (col: idx.col + 1, row: idx.row + 1),
-  ];
+        (col: idx.col - 1, row: idx.row + 1),
+        (col: idx.col - 0, row: idx.row + 1),
+        (col: idx.col + 1, row: idx.row + 1),
+      ]
+      .where(
+        (coord) =>
+            coord.row >= 0 &&
+            coord.col >= 0 &&
+            coord.row < rowLen &&
+            coord.col < rowLen,
+      )
+      .toList();
 }
 
 void printGrid(List<List<String>> grid) {
   for (final row in grid) {
-    for (final val in row) {
-      stdout.write(val);
-    }
+    stdout.write(row.join());
     print('');
   }
   print('');
