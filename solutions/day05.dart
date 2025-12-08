@@ -26,6 +26,7 @@ void main() {
     var discard = false;
     (int, int)? rangeToRemove;
 
+    forloop:
     for (final mergedRange in mergedRanges) {
       switch (currentRange.getOverlap(mergedRange)) {
         case .startOverlaps:
@@ -34,6 +35,7 @@ void main() {
           currentRange = (currentRange.$1, mergedRange.$1 - 1);
         case .fullyEnclosed:
           discard = true;
+          break forloop;
         case .fullyOverlaps:
           rangeToRemove = mergedRange;
         case .noOverlap:
