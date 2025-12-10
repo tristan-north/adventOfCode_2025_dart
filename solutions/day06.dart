@@ -14,18 +14,17 @@ int partOne(List<String> input) {
       line.split(seperatorRe).where((x) => x.isNotEmpty).toList(),
   ];
 
+  final opRow = rows.removeLast();
+
   var solution = 0;
   for (var colIdx = 0; colIdx < rows.first.length; ++colIdx) {
-    final op = rows[4][colIdx];
+    final op = opRow[colIdx];
 
     final opFunc = op == '+'
         ? ((int sum, int b) => sum + b)
         : ((int product, int b) => product * b);
 
-    solution += rows
-        .map((x) => int.tryParse(x[colIdx]))
-        .whereType<int>()
-        .reduce(opFunc);
+    solution += rows.map((x) => int.parse(x[colIdx])).reduce(opFunc);
   }
 
   return solution;
