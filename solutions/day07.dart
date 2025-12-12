@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:collection/collection.dart';
 
-enum GridVal { start, dot, pipe, carrot, at }
+enum GridVal { start, empty, splitter, beam }
 
 typedef Grid = List<GridVal>;
 typedef Coord = ({int row, int col});
@@ -10,123 +10,96 @@ typedef Coord = ({int row, int col});
 late final int rowLen;
 late final int nRows;
 
-final remainingStarts = <Coord>[];
-
 void main() {
-  final grid = File(
+  final input = File(
     'input/day07_input.txt',
   ).readAsLinesSync().map((line) => line.split('')).toList();
 
-  rowLen = grid[0].length;
-  nRows = grid.length;
+  rowLen = input[0].length;
+  nRows = input.length;
 
-  // partOne(grid);
-
-  partTwo(grid);
-}
-
-void partTwo(List<List<String>> gridIn) {
-  final grid = gridIn
+  final grid = input
       .map(
         (row) => row.map(
           (char) => switch (char) {
-            '.' => GridVal.dot,
-            '|' => GridVal.pipe,
-            '@' => GridVal.at,
+            '.' => GridVal.empty,
             'S' => GridVal.start,
-            '^' => GridVal.carrot,
+            '^' => GridVal.splitter,
             _ => throw Exception('unexpected symbol'),
           },
         ),
       )
       .flattenedToList;
 
-  final startIdx = grid.indexOf(.start);
-  remainingStarts.add((row: 0, col: startIdx));
-  // grid[startIdx] = .pipe;
+  partOne(grid);
 
-  // grid.print(clearPrevious: false);
-
-  final stopwatch = Stopwatch()..start();
-  // traverseGrid(grid, (row: 0, col: startIdx));
-  // solution++;
-  // stopwatch.stop();
-  // print('Initial traversal time: ${stopwatch.elapsedMicroseconds}');
-  // stopwatch.reset();
-  // stopwatch.start();
-
-  var iterCount = 0;
-  while (remainingStarts.isNotEmpty) {
-    // Set new initial | based on bottom left most @ and reset @ to ^
-    // final nextCoord = setNewStart(grid);
-    // if (nextCoord.row == -1) break;
-    // grid.print();
-    // sleep(Duration(milliseconds: 100));
-
-    traverseGrid(grid, remainingStarts.removeLast());
-
-    if (iterCount % 10000000 == 0) grid.print();
-    // if (iterCount > 1000000) break;
-
-    iterCount++;
-  }
-  print('Loop time: ${stopwatch.elapsedMilliseconds}');
-  print('Part Two solution: $iterCount');
+  partTwo(grid);
 }
 
-/// Returns coord of next @ or -1 if no more @
-Coord setNewStart(Grid grid) {
-  for (var row = nRows - 1; row >= 0; --row) {
+void partTwo(List<GridVal> grid) {
+  final pathCache = <Coord, int>{};
+
+  for (var row = nRows - 2; row > 1; --row) {
     for (var col = 0; col < rowLen; ++col) {
-      if (grid.getSymbol(row: row, col: col) == .at) {
-        grid.setSymbol(.carrot, row: row, col: col);
-        // grid.setSymbol(.pipe, row: row, col: col + 1);
-        return (row: row, col: col + 1);
+      final currentCoord = (row: row, col: col);
+
+      final symbol = grid.getSymbol(currentCoord);
+      if (symbol == .splitter) {
+        var nPaths = traverseGrid(grid, (
+          row: currentCoord.row,
+          col: currentCoord.col - 1,
+        ), pathCache);
+
+        nPaths += traverseGrid(grid, (
+          row: currentCoord.row,
+          col: currentCoord.col + 1,
+        ), pathCache);
+
+        pathCache[currentCoord] = nPaths;
       }
     }
   }
-  return (row: -1, col: -1);
+  // print(pathCache);
+  final startCoord = (row: 2, col: grid.indexOf(.start));
+  print('Part Two solution: ${pathCache[startCoord]}');
 }
 
-void traverseGrid(Grid grid, Coord coord) {
+/// Return num paths from this grid pos.
+int traverseGrid(Grid grid, Coord coord, Map<Coord, int> pathCache) {
   while (coord.row < nRows - 1) {
-    // Check char underneith
-    final symbolUnder = grid.getSymbol(row: coord.row + 1, col: coord.col);
-    if (symbolUnder == .carrot || symbolUnder == .at) {
-      grid.setSymbol(.at, row: coord.row + 1, col: coord.col);
-      remainingStarts.add((row: coord.row + 1, col: coord.col + 1));
-      coord = (row: coord.row + 1, col: coord.col - 1);
-    } else {
-      coord = (row: coord.row + 1, col: coord.col);
+    coord = (row: coord.row + 1, col: coord.col);
+
+    final symbolUnder = grid.getSymbol(coord);
+    if (symbolUnder == .splitter) {
+      return pathCache[coord] ?? -1;
     }
   }
+  return 1;
 }
 
-void partOne(Grid grid) {
-  // grid.print(clearPrevious: false);
-  //
-  // var nSplits = 0;
-  //
-  // for (final (rowIdx, row) in grid.indexed) {
-  //   if (rowIdx >= grid.length - 1) continue; // Skip last row
-  //
-  //   for (final (colIdx, char) in row.indexed) {
-  //     if (char == '|' || char == 'S') {
-  //       // Current char on current row is a beam
-  //       // Check char underneith
-  //       if (grid[rowIdx + 1][colIdx] == '^') {
-  //         grid[rowIdx + 1][colIdx - 1] = '|';
-  //         grid[rowIdx + 1][colIdx + 1] = '|';
-  //         nSplits++;
-  //       } else {
-  //         grid[rowIdx + 1][colIdx] = '|';
-  //       }
-  //     }
-  //   }
-  //   grid.print();
-  // }
-  //
-  // print('Part One solution: $nSplits');
+void partOne(Grid inGrid) {
+  final grid = [...inGrid];
+  var nSplits = 0;
+
+  for (var rowIdx = 0; rowIdx < nRows - 2; ++rowIdx) {
+    for (var colIdx = 0; colIdx < rowLen; ++colIdx) {
+      final char = grid.getSymbol((row: rowIdx, col: colIdx));
+
+      if (char == .beam || char == .start) {
+        // Current char on current row is a beam
+        // Check char underneith
+        if (grid.getSymbol((row: rowIdx + 1, col: colIdx)) == .splitter) {
+          grid.setSymbol(.beam, row: rowIdx + 1, col: colIdx - 1);
+          grid.setSymbol(.beam, row: rowIdx + 1, col: colIdx + 1);
+          nSplits++;
+        } else {
+          grid.setSymbol(.beam, row: rowIdx + 1, col: colIdx);
+        }
+      }
+    }
+  }
+
+  print('Part One solution: $nSplits');
 }
 
 extension on Grid {
@@ -138,11 +111,10 @@ extension on Grid {
     stdout.write('\x1B[H');
     for (final (i, val) in this.indexed) {
       final char = switch (val) {
-        .dot => '.',
+        .empty => '.',
         .start => 'S',
-        .pipe => '|',
-        .carrot => '^',
-        .at => '@',
+        .splitter => '^',
+        _ => '#',
       };
       stdout.write(char);
 
@@ -155,8 +127,7 @@ extension on Grid {
     stdout.write('\x1B[?25h');
   }
 
-  GridVal getSymbol({required int row, required int col}) =>
-      this[row * rowLen + col];
+  GridVal getSymbol(Coord coord) => this[coord.row * rowLen + coord.col];
 
   void setSymbol(GridVal val, {required int row, required int col}) =>
       this[row * rowLen + col] = val;
