@@ -1,133 +1,152 @@
 import 'dart:io';
 
-typedef Grid = List<List<String>>;
+import 'package:collection/collection.dart';
+
+enum GridVal { start, dot, pipe, carrot, at }
+
+typedef Grid = List<GridVal>;
+typedef Coord = ({int row, int col});
+
+late final int rowLen;
+late final int nRows;
+
+final remainingStarts = <Coord>[];
 
 void main() {
   final grid = File(
     'input/day07_input.txt',
   ).readAsLinesSync().map((line) => line.split('')).toList();
 
+  rowLen = grid[0].length;
+  nRows = grid.length;
+
   // partOne(grid);
 
   partTwo(grid);
 }
 
-void partTwo(List<List<String>> grid) {
-  final startIdx = grid[0].indexOf('S');
-  grid[1][startIdx] = '|';
+void partTwo(List<List<String>> gridIn) {
+  final grid = gridIn
+      .map(
+        (row) => row.map(
+          (char) => switch (char) {
+            '.' => GridVal.dot,
+            '|' => GridVal.pipe,
+            '@' => GridVal.at,
+            'S' => GridVal.start,
+            '^' => GridVal.carrot,
+            _ => throw Exception('unexpected symbol'),
+          },
+        ),
+      )
+      .flattenedToList;
+
+  final startIdx = grid.indexOf(.start);
+  remainingStarts.add((row: 0, col: startIdx));
+  // grid[startIdx] = .pipe;
+
   // grid.print(clearPrevious: false);
 
-  var solution = 0;
-
   final stopwatch = Stopwatch()..start();
-  traverseGrid(grid);
-  stopwatch.stop();
-  print('Initial traversal time: ${stopwatch.elapsedMicroseconds}');
-  stopwatch.reset();
-  stopwatch.start();
+  // traverseGrid(grid, (row: 0, col: startIdx));
+  // solution++;
+  // stopwatch.stop();
+  // print('Initial traversal time: ${stopwatch.elapsedMicroseconds}');
+  // stopwatch.reset();
+  // stopwatch.start();
 
   var iterCount = 0;
-  var rowOfNextIter = 0;
-  while (rowOfNextIter != -1) {
-    clearPipes(grid);
-
+  while (remainingStarts.isNotEmpty) {
     // Set new initial | based on bottom left most @ and reset @ to ^
-    rowOfNextIter = setNewStart(grid);
-    // if (iterCount % 10000 == 0) grid.print();
+    // final nextCoord = setNewStart(grid);
+    // if (nextCoord.row == -1) break;
+    // grid.print();
+    // sleep(Duration(milliseconds: 100));
 
-    traverseGrid(grid);
-    solution++;
+    traverseGrid(grid, remainingStarts.removeLast());
 
-    if (iterCount > 1000) break;
+    if (iterCount % 10000000 == 0) grid.print();
+    // if (iterCount > 1000000) break;
+
     iterCount++;
   }
   print('Loop time: ${stopwatch.elapsedMilliseconds}');
-  print('Part Two solution: $solution');
+  print('Part Two solution: $iterCount');
 }
 
-/// Return -1 if no more @
-int setNewStart(Grid grid) {
-  for (var row = grid.length - 1; row >= 0; --row) {
-    for (var col = 0; col < grid[row].length; ++col) {
-      if (grid[row][col] == '@') {
-        grid[row][col] = '^';
-        grid[row][col + 1] = '|';
-        return row;
-      }
-    }
-  }
-  return -1;
-}
-
-void clearPipes(Grid grid) {
-  final rowLen = grid[0].length;
-  for (var row = 0; row < grid.length; ++row) {
+/// Returns coord of next @ or -1 if no more @
+Coord setNewStart(Grid grid) {
+  for (var row = nRows - 1; row >= 0; --row) {
     for (var col = 0; col < rowLen; ++col) {
-      if (grid[row][col] == '|') grid[row][col] = '.';
-    }
-  }
-}
-
-void traverseGrid(Grid grid) {
-  final rowLen = grid[0].length;
-  for (var rowIdx = 0; rowIdx < grid.length - 1; ++rowIdx) {
-    // var madeGridChange = false;
-    for (var colIdx = 0; colIdx < rowLen; ++colIdx) {
-      if (grid[rowIdx][colIdx] == '|') {
-        final nextRow = grid[rowIdx + 1];
-        // madeGridChange = true;
-        // Current char on current row is a beam
-        // Check char underneith
-        if (nextRow[colIdx] == '^') {
-          nextRow[colIdx - 1] = '|';
-          nextRow[colIdx] = '@';
-        } else {
-          nextRow[colIdx] = '|';
-        }
+      if (grid.getSymbol(row: row, col: col) == .at) {
+        grid.setSymbol(.carrot, row: row, col: col);
+        // grid.setSymbol(.pipe, row: row, col: col + 1);
+        return (row: row, col: col + 1);
       }
     }
-    // if (madeGridChange) grid.print();
+  }
+  return (row: -1, col: -1);
+}
+
+void traverseGrid(Grid grid, Coord coord) {
+  while (coord.row < nRows - 1) {
+    // Check char underneith
+    final symbolUnder = grid.getSymbol(row: coord.row + 1, col: coord.col);
+    if (symbolUnder == .carrot || symbolUnder == .at) {
+      grid.setSymbol(.at, row: coord.row + 1, col: coord.col);
+      remainingStarts.add((row: coord.row + 1, col: coord.col + 1));
+      coord = (row: coord.row + 1, col: coord.col - 1);
+    } else {
+      coord = (row: coord.row + 1, col: coord.col);
+    }
   }
 }
 
 void partOne(Grid grid) {
-  grid.print(clearPrevious: false);
-
-  var nSplits = 0;
-
-  for (final (rowIdx, row) in grid.indexed) {
-    if (rowIdx >= grid.length - 1) continue; // Skip last row
-
-    for (final (colIdx, char) in row.indexed) {
-      if (char == '|' || char == 'S') {
-        // Current char on current row is a beam
-        // Check char underneith
-        if (grid[rowIdx + 1][colIdx] == '^') {
-          grid[rowIdx + 1][colIdx - 1] = '|';
-          grid[rowIdx + 1][colIdx + 1] = '|';
-          nSplits++;
-        } else {
-          grid[rowIdx + 1][colIdx] = '|';
-        }
-      }
-    }
-    grid.print();
-  }
-
-  print('Part One solution: $nSplits');
+  // grid.print(clearPrevious: false);
+  //
+  // var nSplits = 0;
+  //
+  // for (final (rowIdx, row) in grid.indexed) {
+  //   if (rowIdx >= grid.length - 1) continue; // Skip last row
+  //
+  //   for (final (colIdx, char) in row.indexed) {
+  //     if (char == '|' || char == 'S') {
+  //       // Current char on current row is a beam
+  //       // Check char underneith
+  //       if (grid[rowIdx + 1][colIdx] == '^') {
+  //         grid[rowIdx + 1][colIdx - 1] = '|';
+  //         grid[rowIdx + 1][colIdx + 1] = '|';
+  //         nSplits++;
+  //       } else {
+  //         grid[rowIdx + 1][colIdx] = '|';
+  //       }
+  //     }
+  //   }
+  //   grid.print();
+  // }
+  //
+  // print('Part One solution: $nSplits');
 }
 
 extension on Grid {
-  void print({bool clearPrevious = true}) {
+  void print() {
     // Hide cursor
     stdout.write('\x1B[?25l');
 
     // Move cursor to top left
     stdout.write('\x1B[H');
-    // if (clearPrevious) stdout.write('\x1B[${linesToClear}A\x1B[0J');
-    for (final line in this) {
-      line.forEach(stdout.write);
-      stdout.write('\n');
+    for (final (i, val) in this.indexed) {
+      final char = switch (val) {
+        .dot => '.',
+        .start => 'S',
+        .pipe => '|',
+        .carrot => '^',
+        .at => '@',
+      };
+      stdout.write(char);
+
+      if (i % rowLen == 0) stdout.write('\n');
     }
     stdout.write('\n');
     // sleep(Duration(milliseconds: 30));
@@ -135,4 +154,10 @@ extension on Grid {
     // Show cursor
     stdout.write('\x1B[?25h');
   }
+
+  GridVal getSymbol({required int row, required int col}) =>
+      this[row * rowLen + col];
+
+  void setSymbol(GridVal val, {required int row, required int col}) =>
+      this[row * rowLen + col] = val;
 }
