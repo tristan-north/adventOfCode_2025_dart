@@ -20,6 +20,11 @@ void main() {
   }
   distances.sort((a, b) => -a.$1.compareTo(b.$1));
 
+  partOne(input, [...distances]);
+  partTwo(input, [...distances]);
+}
+
+void partOne(List<(int, int, int)> input, List<(double, int, int)> distances) {
   final circuits = <List<int>>[];
   for (var i = 0; i < 1000; i++) {
     final (_, posAIdx, posBIdx) = distances.removeLast();
@@ -51,16 +56,49 @@ void main() {
 
   circuits.sort((a, b) => a.length.compareTo(b.length));
 
-  for (final circuit in circuits) {
-    for (final posIdx in circuit) stdout.write('${input[posIdx].$1} ');
-    print('');
-  }
-
   final solution = circuits
       .getRange(circuits.length - 3, circuits.length)
       .map((c) => c.length)
       .fold(1, (carry, curr) => carry * curr);
+
   print('Part One solution: $solution');
+}
+
+void partTwo(List<(int, int, int)> input, List<(double, int, int)> distances) {
+  final circuits = <List<int>>[];
+
+  int posAIdx = 0;
+  int posBIdx = 0;
+  while (!(circuits.length == 1 && circuits[0].length == input.length)) {
+    (_, posAIdx, posBIdx) = distances.removeLast();
+
+    final posACircuit = getCircuitContaining(posAIdx, circuits);
+    final posBCircuit = getCircuitContaining(posBIdx, circuits);
+
+    switch ((posACircuit, posBCircuit)) {
+      // Neither pos is in a circuit
+      case (null, null):
+        circuits.add([posAIdx, posBIdx]); // Create a new circuit
+
+      // They're in the same circuit
+      case (int a, int b) when a == b:
+        break;
+
+      // They're in different circuits
+      case (int a, int b):
+        circuits[a].addAll(circuits[b]); // Add from one circuit to the other
+        circuits.removeAt(b); // Remove other circuit
+
+      // One is in a circuit but the other isn't
+      case (int a, null):
+        circuits[a].add(posBIdx);
+      case (null, int b):
+        circuits[b].add(posAIdx);
+    }
+  }
+
+  final solution = input[posAIdx].$1 * input[posBIdx].$1;
+  print('Part Two solution: $solution');
 }
 
 int? getCircuitContaining(int posIdxA, List<List<int>> circuits) {
