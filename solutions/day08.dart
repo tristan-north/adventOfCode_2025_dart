@@ -6,7 +6,7 @@ typedef Position = (int, int, int);
 void main() {
   // Create List of (int, int, int)
   final input = File('input/day08_input.txt').readAsLinesSync().map((line) {
-    final asList = line.split(',').map((intStr) => int.parse(intStr)).toList();
+    final asList = line.split(',').map(int.parse).toList();
     return (asList[0], asList[1], asList[2]);
   }).toList();
 
@@ -18,7 +18,7 @@ void main() {
       distances.add((dist, i, j));
     }
   }
-  distances.sort((a, b) => -a.$1.compareTo(b.$1));
+  distances.sort((a, b) => b.$1.compareTo(a.$1));
 
   partOne(input, [...distances]);
   partTwo(input, [...distances]);
