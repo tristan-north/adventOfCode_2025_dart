@@ -87,12 +87,12 @@ bool isLineIntersected(Coord p1, Coord p2, List<Coord> cornersIn) {
     final lineEnd = corners[i + 1];
 
     if (isVerticalLine) {
-      if (isValWithinRange(p1.x, lineStart.x, lineEnd.x, inclusive: true) &&
-          isValWithinRange(lineStart.y, p1.y, p2.y, inclusive: true))
+      if (isValWithinRange(p1.x, lineStart.x, lineEnd.x) &&
+          isValWithinRange(lineStart.y, p1.y, p2.y))
         return true;
     } else {
-      if (isValWithinRange(p1.y, lineStart.y, lineEnd.y, inclusive: true) &&
-          isValWithinRange(lineStart.x, p1.x, p2.x, inclusive: true))
+      if (isValWithinRange(p1.y, lineStart.y, lineEnd.y) &&
+          isValWithinRange(lineStart.x, p1.x, p2.x))
         return true;
     }
   }
@@ -131,10 +131,7 @@ Dir getDir(Coord start, Coord end) {
   return dir;
 }
 
-bool isValWithinRange(int x, int a, int b, {required bool inclusive}) =>
-    inclusive
-    ? x >= min(a, b) && x <= max(a, b)
-    : x > min(a, b) && x < max(a, b);
+bool isValWithinRange(int x, int a, int b) => x >= min(a, b) && x <= max(a, b);
 
 computeArea(Coord corner, Coord otherCorner) {
   return ((corner.x - otherCorner.x).abs() + 1) *
