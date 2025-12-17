@@ -73,32 +73,6 @@ void partTwo(List<Coord> corners) {
   print('Part Two solution: $biggestArea');
 }
 
-bool isPointInside(Coord p, List<Coord> corners) {
-  var nIntersections = 0;
-  for (var i = 0; i < corners.length; i += 2) {
-    final lineStart = corners[i];
-    final lineEnd = corners[i + 1];
-
-    assert(lineStart.x == lineEnd.x);
-    // Check for intersection to the left in x
-    if (isValWithinRange(p.y, lineStart.y, lineEnd.y, inclusive: false) &&
-        p.x > lineStart.x)
-      nIntersections++;
-
-    // Check for intersection with horizontal and count as one intersection
-    final horizontalStart = lineStart;
-    if (i == 0) continue;
-    final horizontalEnd = corners[i - 1];
-    assert(horizontalStart.y == horizontalEnd.y);
-    final horizontal = horizontalStart.x < horizontalEnd.x
-        ? horizontalStart
-        : horizontalEnd;
-    if (horizontal.y == p.y && p.x >= horizontal.x) nIntersections++;
-  }
-
-  return nIntersections.isOdd;
-}
-
 bool isLineIntersected(Coord p1, Coord p2, List<Coord> cornersIn) {
   final isVerticalLine = p1.x == p2.x;
   final corners = [...cornersIn];
@@ -106,7 +80,6 @@ bool isLineIntersected(Coord p1, Coord p2, List<Coord> cornersIn) {
   if (isVerticalLine) {
     // Arrange so that they're in horizontal pairs
     corners.add(corners.removeAt(0));
-    // TODO: not considering wrapping of last and first points
   }
 
   for (var i = 0; i < corners.length; i += 2) {
@@ -162,12 +135,6 @@ bool isValWithinRange(int x, int a, int b, {required bool inclusive}) =>
     inclusive
     ? x >= min(a, b) && x <= max(a, b)
     : x > min(a, b) && x < max(a, b);
-
-bool isPointWithinRect(Coord p, Coord corner, Coord otherCorner) =>
-    p.x >= min(corner.x, otherCorner.x) &&
-    p.x <= max(corner.x, otherCorner.x) &&
-    p.y >= min(corner.y, otherCorner.y) &&
-    p.y <= max(corner.y, otherCorner.y);
 
 computeArea(Coord corner, Coord otherCorner) {
   return ((corner.x - otherCorner.x).abs() + 1) *
