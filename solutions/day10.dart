@@ -38,6 +38,14 @@ int calcNumButtonPushes(String line) {
   var iteration = 1;
   while (true) {
     print('iteration: $iteration');
+    for (final combination in combinations) {
+      final lightState = computeLightsFromPresses(
+        lightsSolution.length,
+        combination,
+        buttons,
+      );
+      if (lightState.equals(lightsSolution)) return iteration;
+    }
 
     var newCombinations = <List<int>>[];
     for (var i = 0; i < buttons.length; i++) {
@@ -48,16 +56,6 @@ int calcNumButtonPushes(String line) {
     combinations = newCombinations;
 
     iteration++;
-
-    // print(combinations);
-    for (final combination in combinations) {
-      final lightState = computeLightsFromPresses(
-        lightsSolution.length,
-        combination,
-        buttons,
-      );
-      if (lightState.equals(lightsSolution)) return iteration;
-    }
   }
 
   return -1;
